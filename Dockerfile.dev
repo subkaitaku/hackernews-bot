@@ -1,0 +1,6 @@
+ARG GO_VERSION=1.21.4
+FROM golang:${GO_VERSION}
+RUN go install github.com/cosmtrek/air@latest
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
