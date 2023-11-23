@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 )
 
 func main() {
@@ -33,9 +34,19 @@ type ItemDetail struct {
 	URL   string `json:"url"`
 }
 
+type TranslationResponse struct {
+	Translations []Translation `json:"translations"`
+}
+
+type Translation struct {
+	DetectedSourceLanguage string `json:"detected_source_language"`
+	Text                   string `json:"text"`
+}
+
 func handler(w http.ResponseWriter, r *http.Request) {
 	const topStoriesURL = "https://hacker-news.firebaseio.com/v0/topstories.json"
 	const transApiURL = "https://api-free.deepl.com/v2/translate"
+	const pushMessageURL = "https://api.line.me/v2/bot/message/push"
 	const targetLang = "JA"
 
 	stRes, err := http.Get(topStoriesURL)
@@ -57,7 +68,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var result []map[string]string
+	var transResult []map[string]string
 	for _, value := range storyNums[:10] {
 		detailURl := "https://hacker-news.firebaseio.com/v0/item/" + strconv.Itoa(value) + ".json"
 		detailRes, err := http.Get(detailURl)
@@ -105,13 +116,56 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		result = append(result, map[string]string{
+		var transSt TranslationResponse
+		err = json.Unmarshal([]byte(transBody), &transSt)
+		if err != nil {
+			fmt.Println("Error json Unmarshal:", err)
+			return
+		}
+
+		transResult = append(transResult, map[string]string{
 			"originalTitle":   itemDetail.Title,
-			"translatedTitle": string(transBody),
+			"translatedTitle": transSt.Translations[0].Text,
 			"url":             itemDetail.URL,
 		})
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	// build message data for LINE Message API
+	var messages []string
+	for i, value := range transResult {
+		m := "【" + strconv.Itoa(i+1) + "位】 " + "\n" + value["translatedTitle"] + "(" + value["originalTitle"] + ")" + "\n" + value["url"]
+		messages = append(messages, m)
+		messages = append(messages, "")
+	}
+	result := strings.Join(messages, "\n")
+	data := map[string]interface{}{
+		"to": os.Getenv("LINE_USER_ID"),
+		"messages": []map[string]string{
+			{
+				"type": "text",
+				"text": result,
+			},
+		},
+	}
+	jData, err := json.Marshal(data)
+	if err != nil {
+		fmt.Println("error!", err)
+		return
+	}
+
+	req, err := http.NewRequest("POST", pushMessageURL, bytes.NewBuffer(jData))
+	if err != nil {
+		fmt.Println("post request creating error: ", err)
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+os.Getenv("LINE_CHANNEL_TOKEN"))
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Error making HTTP request:", err)
+		return
+	}
+	fmt.Println(res)
 }
