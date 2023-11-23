@@ -1,19 +1,28 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/joho/godotenv"
 	"io"
 	"net/http"
+	"net/url"
+	"os"
 	"strconv"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Println("Error loading .env file")
+	}
+
 	http.HandleFunc("/", handler)
 
 	port := 8080
 	fmt.Printf("Server listening on :%d...\n", port)
-	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	if err != nil {
 		fmt.Println("Error:", err)
 	}
@@ -26,6 +35,9 @@ type ItemDetail struct {
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	const topStoriesURL = "https://hacker-news.firebaseio.com/v0/topstories.json"
+	const transApiURL = "https://api-free.deepl.com/v2/translate"
+	const targetLang = "JA"
+
 	stRes, err := http.Get(topStoriesURL)
 	if err != nil {
 		fmt.Println("error!!", err)
@@ -67,7 +79,37 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("json parse error!: ", err)
 			return
 		}
-		result = append(result, map[string]string{"title": itemDetail.Title, "url": itemDetail.URL})
+
+		// translate DEEPL en -> ja
+		data := url.Values{}
+		data.Set("text", itemDetail.Title)
+		data.Set("target_lang", targetLang)
+		req, err := http.NewRequest("POST", transApiURL, bytes.NewBufferString(data.Encode()))
+		if err != nil {
+			fmt.Println("post request creating error: ", err)
+			return
+		}
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.Header.Set("Authorization", "DeepL-Auth-Key "+os.Getenv("DEEPL_API_KEY"))
+
+		client := &http.Client{}
+		transRes, err := client.Do(req)
+		if err != nil {
+			fmt.Println("Error making HTTP request:", err)
+			return
+		}
+		defer transRes.Body.Close()
+		transBody, err := io.ReadAll(transRes.Body)
+		if err != nil {
+			fmt.Println("Error read trans request:", err)
+			return
+		}
+
+		result = append(result, map[string]string{
+			"originalTitle":   itemDetail.Title,
+			"translatedTitle": string(transBody),
+			"url":             itemDetail.URL,
+		})
 	}
 
 	w.Header().Set("Content-Type", "application/json")
