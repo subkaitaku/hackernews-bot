@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/joho/godotenv"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -61,6 +62,11 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("body parse error!!: ", err)
 		return
 	}
+	if len(body) == 0 {
+		fmt.Println("could not get the top stories")
+		return
+	}
+
 	var storyNums []int
 	err = json.Unmarshal([]byte(body), &storyNums)
 	if err != nil {
@@ -81,6 +87,10 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		detailBody, err := io.ReadAll(detailRes.Body)
 		if err != nil {
 			fmt.Println("body parse error!!: ", err)
+			return
+		}
+		if len(detailBody) == 0 {
+			fmt.Println("could not get the detail story")
 			return
 		}
 
@@ -115,6 +125,9 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Error read trans request:", err)
 			return
 		}
+		if len(transBody) == 0 {
+			break
+		}
 
 		var transSt TranslationResponse
 		err = json.Unmarshal([]byte(transBody), &transSt)
@@ -128,6 +141,10 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			"translatedTitle": transSt.Translations[0].Text,
 			"url":             itemDetail.URL,
 		})
+	}
+	if len(transResult) == 0 {
+		fmt.Println("translate failed!")
+		return
 	}
 
 	// build message data for LINE Message API
