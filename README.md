@@ -4,4 +4,4 @@ When you actually run it, please use DEEPL_API_KEY/LINE_CHANNEL_TOKEN/LINE_USER_
 I develop using the `Dev container` and haven't set the container configuration for production yet.<br>
 
 # Example
-![IMG_01AC317BB1CE-1](https://github.com/subkaitaku/hackernews-bot/assets/113927971/d6626c1c-fbf6-43b2-b5a6-1d8fbae0827c)
+![IMG_3788](https://github.com/subkaitaku/hackernews-bot/assets/113927971/bc5b935c-76d5-48a1-b7d8-b03e07a25660)
