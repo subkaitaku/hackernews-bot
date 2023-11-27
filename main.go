@@ -17,7 +17,8 @@ import (
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		fmt.Println("Error loading .env file")
+		fmt.Println("Error loading .env file", err)
+		return
 	}
 
 	http.HandleFunc("/", handler)
@@ -184,5 +185,5 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Error making HTTP request:", err)
 		return
 	}
-	fmt.Println(res)
+	fmt.Println(res.Status)
 }
