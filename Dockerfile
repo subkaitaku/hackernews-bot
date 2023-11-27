@@ -7,7 +7,7 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o news-app .
 
-FROM alpine:3.18.4
+FROM gcr.io/distroless/static-debian12
 WORKDIR /app
 COPY --from=build /app/news-app .
 EXPOSE 8080
