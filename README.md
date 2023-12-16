@@ -5,3 +5,9 @@ I develop using the `Dev container` and haven't set the container configuration 
 
 # Example
 ![IMG_3788](https://github.com/subkaitaku/hackernews-bot/assets/113927971/bc5b935c-76d5-48a1-b7d8-b03e07a25660)
+
+# Deploy
+```zsh
+$ docker run -p 8080:8080 --platform linux/amd64 $(ko build . --local)
+$ curl http://localhost:8080
+```

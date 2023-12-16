@@ -21,14 +21,7 @@ func main() {
 		return
 	}
 
-	http.HandleFunc("/", handler)
-
-	port := 8080
-	fmt.Printf("Server listening on :%d...\n", port)
-	err = http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
-	if err != nil {
-		fmt.Println("Error:", err)
-	}
+	getNews()
 }
 
 type ItemDetail struct {
@@ -45,7 +38,7 @@ type Translation struct {
 	Text                   string `json:"text"`
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
+func getNews() {
 	const topStoriesURL = "https://hacker-news.firebaseio.com/v0/topstories.json"
 	const transApiURL = "https://api-free.deepl.com/v2/translate"
 	const pushMessageURL = "https://api.line.me/v2/bot/message/push"
