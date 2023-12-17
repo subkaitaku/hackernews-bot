@@ -1,3 +1,6 @@
+# version
+Go: 1.21.4
+
 # hackernews-bot
 This program uses the Hacker News API to translate titles in DeppL and post them to the LINE channel.<br>
 When you actually run it, please use DEEPL_API_KEY/LINE_CHANNEL_TOKEN/LINE_USER_ID in the .env.<br>
